@@ -4,6 +4,7 @@ import chainImage from './assets/image/chain.png'
 import iegao from './assets/image/iegao.png'
 import bim from './assets/image/bim.png'
 import iot from './assets/image/iot.png'
+import disc from './assets/texture/disc.png'
 import gsap from 'gsap';
 
 let scene, camera, renderer, particles, particlePositions;
@@ -45,7 +46,7 @@ function onDocumentMouseMove(event) {
   isMouseOver = true;
 }
 
-function loadImageCreateParticles(imagePath) {
+function loadImageCreateParticles(imagePath, initialColor = new THREE.Color(0, 0, 1)) {
   const loader = new THREE.TextureLoader();
   loader.load(imagePath, function(texture) {
     console.log("image loaded");
@@ -89,22 +90,20 @@ function loadImageCreateParticles(imagePath) {
           );
 
           targetPos.push(posX, posY, 0)
-          colors.push(r / 255, g / 255, b / 255);
+          colors.push(initialColor.r, initialColor.g, initialColor.b);
         }
       }
     }
 
 
     const geometry = new THREE.BufferGeometry();
+    const sprite = new THREE.TextureLoader().load(disc);
 
     geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
     geometry.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));
 
     const material = new THREE.PointsMaterial({
-      size: 3.5,
-      vertexColors: true,
-      transparent: true,
-      opacity: 0.5,
+      size: 15, sizeAttenuation: true, vertexColors: true, map: sprite, alphaTest: 0.5, transparent: true
     })
     particles = new THREE.Points(geometry, material);
     scene.add(particles);
@@ -164,7 +163,7 @@ function updateParticles() {
       );
 
       // on mouse contact push particles away
-      const spreadRadius = 50;
+      const spreadRadius = 40; 
       if (distance < spreadRadius) {
         const spreadFactor = 1 - (distance / spreadRadius);
         positions[index] += (posX - mouseX * window.innerWidth / 2) * spreadFactor * spreadStrength;
@@ -172,7 +171,7 @@ function updateParticles() {
       } else {
         //random particle scattering effect
         if (Math.random() < scatterRate) {
-          const scatterSpeed = 0.05
+          const scatterSpeed = 0.0 //change to 0 if dont want the random spread
           const targetX = Math.random() * window.innerWidth - window.innerWidth / 2;
           const targetY = Math.random() * window.innerHeight - window.innerHeight / 2;
 
@@ -204,7 +203,7 @@ button.onclick = () => {
   if(scene.children.length > 0){ 
     scene.remove(scene.children[0]); 
   }
-  loadImageCreateParticles(arrImg[imgIndex]);
+  loadImageCreateParticles(arrImg[imgIndex], new THREE.Color('#0000FF'));
   imgIndex++;
   if(imgIndex >= arrImg.length)
   {
@@ -213,7 +212,7 @@ button.onclick = () => {
 }
 
 button2.onclick = () => {
-  const arr = ['#0000FF', '#ADD8E6', '#FFFF00']
+  const arr = ['#89CFF0', '#FFFF00', '#0000FF']
   setParticleColor(new THREE.Color(arr[colorIndex]));
   colorIndex++;
   if(colorIndex >= arr.length)
