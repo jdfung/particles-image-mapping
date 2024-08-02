@@ -1,7 +1,9 @@
 import './styles/style.css';
 import * as THREE from 'three';
-import chainImage from './chain.png'
-import iegao from './iegao.png'
+import chainImage from './assets/image/chain.png'
+import iegao from './assets/image/iegao.png'
+import bim from './assets/image/bim.png'
+import iot from './assets/image/iot.png'
 import gsap from 'gsap';
 
 let scene, camera, renderer, particles, particlePositions;
@@ -53,8 +55,6 @@ function loadImageCreateParticles(imagePath) {
     const imgHeight = img.height;
 
     const canvas = document.createElement('canvas');
-    // const canvas = document.querySelector('#bg');
-    // canvas.className = 'testing'
     canvas.width = imgWidth;
     canvas.height = imgHeight;
     const context = canvas.getContext('2d');
@@ -67,7 +67,6 @@ function loadImageCreateParticles(imagePath) {
     const targetPos = [];
     const colors = [];
     
-    // let index = 0;
     for (let y = 0; y < imgHeight; y+=2) {
       for (let x = 0; x < imgWidth; x+=2) {
         const index   = (y * imgWidth + x) * 4;
@@ -199,8 +198,9 @@ function render() {
 
 let imgIndex = 0;
 let colorIndex = 0;
+
 button.onclick = () => {
-  const arrImg = [iegao, chainImage]
+  const arrImg = [iegao, bim, iot, chainImage]
   if(scene.children.length > 0){ 
     scene.remove(scene.children[0]); 
   }
