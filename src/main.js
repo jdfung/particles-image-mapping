@@ -9,7 +9,7 @@ import gsap from 'gsap';
 
 let scene, camera, renderer, particles, particlePositions;
 let mouseX = 0, mouseY = 0;
-const spreadStrength = 10;
+const spreadStrength = 20;
 let isMouseOver = false;
 const scatterRate = 0.003;
 const button = document.getElementById('button');
@@ -67,6 +67,12 @@ function loadImageCreateParticles(imagePath, initialColor = new THREE.Color(0, 0
     const positions = [];
     const targetPos = [];
     const colors = [];
+
+    const darkBlue = new THREE.Color(0x00008B);
+    const lightBlue = new THREE.Color('#0096FF');
+    const yellow = new THREE.Color(0xFFFF00);
+
+    const gap = 1;
     
     for (let y = 0; y < imgHeight; y+=2) {
       for (let x = 0; x < imgWidth; x+=2) {
@@ -78,8 +84,8 @@ function loadImageCreateParticles(imagePath, initialColor = new THREE.Color(0, 0
         const a = data[index + 3];
 
         if (a > 128) { // Only get the pos of visible pixels
-          const posX = x - imgWidth / 2;
-          const posY = -y + imgHeight / 2;
+          const posX = (x - imgWidth / 2) * gap;
+          const posY = (-y + imgHeight / 2) * gap;
           // const posZ = 0;
 
           //initial randomize pos
@@ -90,7 +96,70 @@ function loadImageCreateParticles(imagePath, initialColor = new THREE.Color(0, 0
           );
 
           targetPos.push(posX, posY, 0)
-          colors.push(initialColor.r, initialColor.g, initialColor.b);
+          // colors.push(initialColor.r, initialColor.g, initialColor.b);
+
+          /* spread color left, middle, right equally */
+          // const leftRange = imgWidth / 3
+          // const rightRange = 2 * imgWidth / 3
+          // let color;
+          // if (x < leftRange) {
+          //   color = darkBlue;
+          // } else if (x < rightRange) {
+          //   color = yellow;
+          // } else {
+          //   color = lightBlue;
+          // }
+
+          /* spread color in a radius, outermost, middle, and innermost */
+          const maxDistance = Math.sqrt(Math.pow(imgWidth / 2, 2) + Math.pow(imgHeight / 2, 2));
+          const innerRadius = maxDistance * 0.20;
+          const middleRadius = maxDistance * 0.30;
+
+           // Calculate distance from the center
+           const distanceFromCenter = Math.sqrt(posX * posX + posY * posY);
+
+           // Assign color based on distance
+           let color;
+           if (distanceFromCenter < innerRadius) {
+             color = darkBlue;
+           } else if (distanceFromCenter < middleRadius) {
+             color = lightBlue;
+           } else {
+             color = yellow;
+           }
+
+          colors.push(color.r, color.g, color.b);
+
+          // const darkBlueParticles = [];
+          // const lightBlueParticles = [];
+          // const yellowParticles = [];
+          
+          // const randomNum = Math.random();
+          // if (randomNum < 1 / 3) {
+          //   darkBlueParticles.push([darkBlue.r, darkBlue.g, darkBlue.b]);
+          // } else if (randomNum < 2 / 3) {
+          //   lightBlueParticles.push([lightBlue.r, lightBlue.g, lightBlue.b]);
+          // } else {
+          //   yellowParticles.push([yellow.r, yellow.g, yellow.b]);
+          // }
+
+          // /* Randomize the color distribution */
+          // const totalParticles = darkBlueParticles.length + lightBlueParticles.length + yellowParticles.length;
+          // const particlesPerColor = Math.floor(totalParticles / 3);
+          // const remainder = totalParticles % 3;
+      
+          // for (let i = 0; i < particlesPerColor; i++) {
+          //   if (i < darkBlueParticles.length) colors.push(...darkBlueParticles[i]);
+          //   if (i < lightBlueParticles.length) colors.push(...lightBlueParticles[i]);
+          //   if (i < yellowParticles.length) colors.push(...yellowParticles[i]);
+          // }
+      
+          // // Add the remainder particles
+          // for (let i = 0; i < remainder; i++) {
+          //   if (i < darkBlueParticles.length) colors.push(...darkBlueParticles[particlesPerColor + i]);
+          //   else if (i < lightBlueParticles.length) colors.push(...lightBlueParticles[particlesPerColor + i]);
+          //   else if (i < yellowParticles.length) colors.push(...yellowParticles[particlesPerColor + i]);
+          // }
         }
       }
     }
@@ -103,7 +172,7 @@ function loadImageCreateParticles(imagePath, initialColor = new THREE.Color(0, 0
     geometry.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));
 
     const material = new THREE.PointsMaterial({
-      size: 15, sizeAttenuation: true, vertexColors: true, map: sprite, alphaTest: 0.5, transparent: true
+      size: 8, sizeAttenuation: true, map: sprite, vertexColors: true, alphaTest: 0.5, transparent: true
     })
     particles = new THREE.Points(geometry, material);
     scene.add(particles);
@@ -128,19 +197,6 @@ function animateParticlesToImg(targetPositions) {
   });
 }
 
-
-function setParticleColor(color) {
-  if (particles) {
-    const colors = particles.geometry.attributes.color.array;
-    for (let i = 0; i < colors.length; i += 3) {
-      colors[i] = color.r;
-      colors[i + 1] = color.g;
-      colors[i + 2] = color.b;
-    }
-    particles.geometry.attributes.color.needsUpdate = true;
-  }
-}
-
 function animate() {
   requestAnimationFrame(animate);
 
@@ -163,15 +219,22 @@ function updateParticles() {
       );
 
       // on mouse contact push particles away
-      const spreadRadius = 40; 
+      const spreadRadius = 50; 
       if (distance < spreadRadius) {
         const spreadFactor = 1 - (distance / spreadRadius);
-        positions[index] += (posX - mouseX * window.innerWidth / 2) * spreadFactor * spreadStrength;
-        positions[index + 1] += (posY - mouseY * window.innerHeight / 2) * spreadFactor * spreadStrength;
+        const easing = (t) => t * t * (3 - 2 * t);
+        // positions[index] += (posX - mouseX * window.innerWidth / 2) * spreadFactor * spreadStrength;
+        // positions[index + 1] += (posY - mouseY * window.innerHeight / 2) * spreadFactor * spreadStrength;
+
+        const targetX = posX + (posX - mouseX * window.innerWidth / 2) * spreadFactor * spreadStrength;
+        const targetY = posY + (posY - mouseY * window.innerHeight / 2) * spreadFactor * spreadStrength;
+
+        positions[index] = THREE.MathUtils.lerp(posX, targetX, easing(0.1));
+        positions[index + 1] = THREE.MathUtils.lerp(posY, targetY, easing(0.1));
       } else {
         //random particle scattering effect
         if (Math.random() < scatterRate) {
-          const scatterSpeed = 0.0 //change to 0 if dont want the random spread
+          const scatterSpeed = 0.02 //change to 0 if dont want the random spread
           const targetX = Math.random() * window.innerWidth - window.innerWidth / 2;
           const targetY = Math.random() * window.innerHeight - window.innerHeight / 2;
 
@@ -180,8 +243,10 @@ function updateParticles() {
           positions[index + 1] += (targetY - posY) * scatterSpeed;
         } else {
           // move back to ori position if not in the scatter area
-          positions[index] += (particlePositions[index] - posX) * 0.03;
-          positions[index + 1] += (particlePositions[index + 1] - posY) * 0.03;
+          // positions[index] += (particlePositions[index] - posX) * 0.02;
+          // positions[index + 1] += (particlePositions[index + 1] - posY) * 0.02;
+          positions[index] = THREE.MathUtils.lerp(posX, particlePositions[index], 0.03);
+          positions[index + 1] = THREE.MathUtils.lerp(posY, particlePositions[index + 1], 0.03);
         }
       }
     }
@@ -196,7 +261,6 @@ function render() {
 
 
 let imgIndex = 0;
-let colorIndex = 0;
 
 button.onclick = () => {
   const arrImg = [iegao, bim, iot, chainImage]
@@ -208,15 +272,5 @@ button.onclick = () => {
   if(imgIndex >= arrImg.length)
   {
     imgIndex = 0;
-  }
-}
-
-button2.onclick = () => {
-  const arr = ['#89CFF0', '#FFFF00', '#0000FF']
-  setParticleColor(new THREE.Color(arr[colorIndex]));
-  colorIndex++;
-  if(colorIndex >= arr.length)
-  {
-    colorIndex = 0;
   }
 }
